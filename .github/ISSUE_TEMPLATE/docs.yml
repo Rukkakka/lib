@@ -1,0 +1,30 @@
+name: 📝 Docs
+description: Something in the documentation is missing, wrong, or unclear
+labels: ["docs"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Where?
+      description: The file, section, or docstring.
+      placeholder: "README.md — HTTP API clients table"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong or missing?
+      description: |
+        Say what the docs currently claim and why that's incorrect, outdated,
+        or hard to follow.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested wording
+      description: Optional — propose the text you'd like to see.
+    validations:
+      required: false

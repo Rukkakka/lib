@@ -1,0 +1,64 @@
+name: 🐛 Bug Report
+description: Report a client that isn't behaving as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please redact credentials, tokens, and internal
+        hostnames from anything you paste below.
+
+  - type: dropdown
+    id: client
+    attributes:
+      label: Client
+      description: Which client module is affected?
+      options:
+        - clients.clickhouse
+        - clients.hive
+        - clients.trino
+        - clients.slack
+        - clients.grafana
+        - clients.prometheus
+        - clients.gokr_opendata
+        - clients.ms
+        - clients.google
+        - clients.base (shared infrastructure)
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The smallest snippet that triggers the bug.
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Traceback or error output
+      description: Paste the full traceback if there is one.
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: versions
+    attributes:
+      label: Environment
+      description: Python version, and the version of the wrapped driver or SDK.
+      placeholder: "Python 3.11.6, trino 0.330.0"
+    validations:
+      required: false

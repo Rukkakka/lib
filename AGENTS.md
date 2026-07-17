@@ -80,6 +80,18 @@ Read **[references/code-style.md](references/code-style.md)** before editing —
 it defines import ordering, quoting, and docstring format. For how the modules
 fit together, see **[references/architecture.md](references/architecture.md)**.
 
+## Workflow
+
+Read **[references/deploy.md](references/deploy.md)** before committing. In
+short: **open an issue before every commit**, using a template from
+`.github/ISSUE_TEMPLATE/` — never a blank issue. Then **cut a branch off `main`
+and commit there — never commit to `main` directly**, no matter how small the
+change; name it `<type>/<slug>` and reference the issue from the commit
+(`Refs #12`). A branch can carry several commits and close several issues.
+Everything reaches `main` through a PR, opened with
+`.github/PULL_REQUEST_TEMPLATE.md` filled in and closing its issues from the PR
+body. One concern per commit; stage paths deliberately, not `git add -A`.
+
 ## Note
 
 `base.py`'s `BaseClientModel` is the shared base for the httpx API clients

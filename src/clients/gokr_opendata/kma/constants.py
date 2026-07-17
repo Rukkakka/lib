@@ -5,20 +5,22 @@ from typing import (
 )
 
 
-# 기상청 중기예보 엔드포인트별 지점번호/예보구역코드, 그리고 한글 구역명으로
-# 코드를 찾기 위한 역방향 매핑.
+# Station ids / forecast-region codes per 기상청 중기예보 endpoint, plus the reverse
+# mappings that resolve a 한글 구역명 to its code.
 #
-# 구역명은 한 엔드포인트 안에서 유일해야 `*_BY_NAME`이 성립한다. 중기기온의 `광주`
-# (경기/광주광역시)와 `고성`(강원/경남)만 원본에서 겹쳐, 시도명을 붙여 구분했다.
+# A 구역명 must be unique within an endpoint for `*_BY_NAME` to hold. Only 중기기온's
+# `광주` (경기/광주광역시) and `고성` (강원/경남) collide in the source; both are
+# disambiguated by prefixing the 시도명.
 #
-# 중기기온만 `중기예보_중기기온예보구역코드_2025.12.xlsx`에서 왔고(`특성` 열이 C인
-# 행), 나머지 셋은 엔드포인트가 실제로 받는 코드만 추린 API 문서 표에서 왔다. 그래서
-# 엑셀에 있는 코드라고 다 여기 있지는 않다 — 중기육상은 엑셀의 특성 A 18개 중 상위
-# 광역(충청도/전라도/경상도)과 북한 구역을 뺀 10개만, 중기해상은 특성 H 16개 중
-# 서해/남해/동해 전체 구역을 뺀 13개만 받는다.
+# 중기기온 alone comes from `중기예보_중기기온예보구역코드_2025.12.xlsx` (rows whose
+# `특성` column is C); the other three come from the API doc tables, which list only
+# the codes their endpoint actually accepts. So not every code in the spreadsheet
+# appears here — 중기육상 takes 10 of the spreadsheet's 18 특성 A rows, dropping the
+# broader 광역 regions (충청도/전라도/경상도) and the 북한 ones, and 중기해상 takes 13
+# of its 16 특성 H rows, dropping the whole-sea 서해/남해/동해 regions.
 
 
-# 중기전망(`getMidFcst`) 지점번호.
+# 중기전망 (`getMidFcst`) station ids.
 MidFcstStnId = Literal[
     '105',
     '108',
@@ -63,7 +65,7 @@ MID_FCST_STN_ID_BY_NAME: Final[Mapping[MidFcstStnName, MidFcstStnId]] = {
 }
 
 
-# 중기육상예보(`getMidLandFcst`) 예보구역코드.
+# 중기육상예보 (`getMidLandFcst`) forecast-region codes.
 MidLandFcstRegId = Literal[
     '11B00000',
     '11D10000',
@@ -108,7 +110,7 @@ MID_LAND_FCST_REG_ID_BY_NAME: Final[Mapping[MidLandFcstRegName, MidLandFcstRegId
 }
 
 
-# 중기기온(`getMidTa`) 예보구역코드 — 도시(지역).
+# 중기기온 (`getMidTa`) forecast-region codes, at 도시(지역) level.
 MidTaRegId = Literal[
     '11A00101',
     '11B10101',
@@ -732,7 +734,7 @@ MID_TA_REG_ID_BY_NAME: Final[Mapping[MidTaRegName, MidTaRegId]] = {
 }
 
 
-# 중기해상예보(`getMidSeaFcst`) 예보구역코드.
+# 중기해상예보 (`getMidSeaFcst`) forecast-region codes.
 MidSeaFcstRegId = Literal[
     '12A20000',
     '12A30000',
