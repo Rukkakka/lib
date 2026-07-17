@@ -2,6 +2,7 @@ from functools import cached_property
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field
 )
 
@@ -71,6 +72,10 @@ class GoogleCredentialsModel(BaseModel):
     Attributes:
         credentials: Cached `Credentials`, created on first access.
     """
+
+    model_config = ConfigDict(
+        extra='forbid',
+    )
 
     token: Annotated[
         str,

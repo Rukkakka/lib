@@ -77,7 +77,7 @@ class ClickHouseModel(BaseModel):
 
     password: Annotated[
         str,
-        Field()
+        Field(repr=False)
     ]
 
     connect_timeout: Annotated[
@@ -106,10 +106,11 @@ class ClickHouseModel(BaseModel):
 
         A coroutine method rather than a property because the client is built
         with `await get_async_client(...)`, which `@cached_property` cannot do;
-        the result is cached manually into `self.__dict__`.
+        the result is cached manually into `self.__dict__` under `_async_client`
+        — not under this method's own name, which would shadow it.
         """
-        if 'async_client' not in self.__dict__:
-            self.__dict__['async_client'] = await get_async_client(
+        if '_async_client' not in self.__dict__:
+            self.__dict__['_async_client'] = await get_async_client(
                 host=self.host,
                 port=self.port,
                 username=self.username,
@@ -117,7 +118,7 @@ class ClickHouseModel(BaseModel):
                 connect_timeout=self.connect_timeout,
                 send_receive_timeout=self.send_receive_timeout
             )
-        return self.__dict__['async_client']
+        return self.__dict__['_async_client']
 
     def close(self) -> None:
         client: Optional[Client] = self.__dict__.pop('client', None)
@@ -125,7 +126,7 @@ class ClickHouseModel(BaseModel):
             client.close()
 
     async def aclose(self) -> None:
-        async_client: Optional[AsyncClient] = self.__dict__.pop('async_client', None)
+        async_client: Optional[AsyncClient] = self.__dict__.pop('_async_client', None)
         if async_client is not None:
             await async_client.close()
 

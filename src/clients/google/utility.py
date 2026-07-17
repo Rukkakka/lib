@@ -16,7 +16,7 @@ DEFAULT_SCOPES = [
 
 
 def create_credentials(
-    scopres: Optional[List[str]] = None,
+    scopes: Optional[List[str]] = None,
     credentials_cache = NOOP,
     use_local_webserver: bool = True,
     **kwargs
@@ -28,7 +28,7 @@ def create_credentials(
     (or pass a `credentials_cache`) to avoid signing in repeatedly.
 
     Args:
-        scopres: Requested scopes. Defaults to full Drive and Sheets access.
+        scopes: Requested scopes. Defaults to full Drive and Sheets access.
         credentials_cache: `pydata_google_auth` cache backing the flow.
             Defaults to `NOOP` — nothing is read or written to disk.
         use_local_webserver: Whether to complete the flow through a local
@@ -45,7 +45,7 @@ def create_credentials(
         >>> model = GspreadModel(**creds.model_dump())
     """
     creds = get_user_credentials(
-        scopes=scopres or DEFAULT_SCOPES,
+        scopes=scopes or DEFAULT_SCOPES,
         credentials_cache=credentials_cache,
         use_local_webserver=use_local_webserver,
         **kwargs
