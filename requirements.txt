@@ -1,0 +1,40 @@
+# Direct dependencies of src/clients/ (Python 3.11).
+# Transitive dependencies are left to the resolver.
+#
+# Lower bound = the version this library is known to work against.
+# Upper bound = the next release allowed to break its API. For 1.0+ packages
+# that's the next major; for 0.x packages a minor bump may break, so those are
+# capped at the next minor. `trino` is the exception: it has been stable across
+# the 0.3xx line, so it's allowed to float up to 1.0.
+
+# Shared infrastructure — clients/base.py
+pydantic>=2.13,<3
+httpx>=0.28,<0.29
+tenacity>=9.1,<10
+
+# clients.clickhouse
+clickhouse-connect>=1.4,<2
+
+# clients.hive
+# The thrift transport is an extra; plain PyHive can't connect without it.
+# Uses `hive_pure_sasl` (pure-sasl) rather than `hive` (sasl): the `sasl` C
+# extension doesn't build on Python 3.11, and HiveModel only does PLAIN auth
+# (NONE/LDAP/CUSTOM/NOSASL), which pure-sasl covers. Kerberos would need `sasl`.
+PyHive[hive_pure_sasl]>=0.7,<0.8
+
+# clients.trino
+trino>=0.338,<1
+
+# clients.slack
+slack_sdk>=3.43,<4
+
+# clients.ms — Microsoft Graph
+msgraph-sdk>=1.59,<2
+azure-identity>=1.25,<2
+microsoft-kiota-authentication-azure>=1.11,<2
+
+# clients.google — Drive / Sheets
+google-api-python-client>=2.198,<3
+google-auth>=2.56,<3
+gspread>=6.2,<7
+pydata-google-auth>=1.9,<2
