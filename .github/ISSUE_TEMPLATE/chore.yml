@@ -1,0 +1,41 @@
+name: 🧹 Chore
+description: Dependencies, tooling, config, or cleanup — no behavior change
+labels: ["chore"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Dependency bump or pin
+        - Tooling or CI
+        - Config
+        - Refactor / cleanup
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs doing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why now?
+      description: |
+        What's the cost of leaving it alone? A security advisory, a broken
+        build, and general tidiness are all valid answers.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - label: This changes behavior for callers of a client
+          required: false

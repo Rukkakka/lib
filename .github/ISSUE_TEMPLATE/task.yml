@@ -1,0 +1,30 @@
+name: ✅ Task
+description: A unit of planned work that isn't a bug, feature, doc, or chore
+labels: ["task"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      description: How do we know this is finished?
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Related issues, PRs, or links. Optional.
+    validations:
+      required: false

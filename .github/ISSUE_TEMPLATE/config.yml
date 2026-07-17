@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Question or discussion
+    url: https://github.com/Rukkakka/lib/discussions
+    about: Ask how to use a client, or discuss an idea before filing an issue.

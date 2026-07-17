@@ -1,0 +1,38 @@
+name: ✨ Feature
+description: Propose a new client, model, or endpoint
+labels: ["feature"]
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should exist?
+      description: |
+        Describe the client, model, or endpoint you want. If it wraps an
+        external API, link its documentation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Why is it needed?
+      description: What are you trying to do that the current clients can't do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: usage
+    attributes:
+      label: Proposed usage
+      description: Sketch the code you'd like to write once this exists.
+      render: python
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: conventions
+    attributes:
+      label: Conventions
+      options:
+        - label: For a new HTTP client, I've read references/api-client-conventions.md
+          required: false
