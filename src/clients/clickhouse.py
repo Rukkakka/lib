@@ -77,7 +77,7 @@ class ClickHouseModel(BaseModel):
 
     password: Annotated[
         str,
-        Field()
+        Field(repr=False)
     ]
 
     connect_timeout: Annotated[
