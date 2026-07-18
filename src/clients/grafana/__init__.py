@@ -1,6 +1,5 @@
 from .main import GrafanaClientModel
 from .models.dto import (
-    GrafanaRequestHeaderModel,
     TypeInfoModel,
     FieldModel,
     SchemaModel,
@@ -9,6 +8,7 @@ from .models.dto import (
     RefIdModel,
 )
 from .models.request import (
+    GrafanaRequestHeaderModel,
     GrafanaDsQueryRequestParameterModel,
     GrafanaDsQueryRequestPayloadModel
 )

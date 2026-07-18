@@ -1,5 +1,3 @@
-from functools import cached_property
-
 from clients.gokr_opendata.base import BaseGoKrOpenDataClientModel
 
 from clients.gokr_opendata.kma import KMAClientModel
@@ -27,19 +25,9 @@ class GoKrOpenDataModel(BaseGoKrOpenDataClientModel):
         ...     model.kma_client.run_request_get_mid_fcst(parameter)
     """
 
-    @cached_property
+    @property
     def kma_client(self) -> KMAClientModel:
         return KMAClientModel(
             client=self._client,
             async_client=self._async_client
         )
-
-    def close(self) -> None:
-        # Drop the cached service clients too: they hold the httpx client being
-        # closed, which `BaseClientModel.close` only evicts from this model.
-        self.__dict__.pop('kma_client', None)
-        super().close()
-
-    async def aclose(self) -> None:
-        self.__dict__.pop('kma_client', None)
-        await super().aclose()

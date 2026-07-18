@@ -20,8 +20,8 @@ from clients.utility import (
     should_retry_idempotent
 )
 from clients.base import BaseClientModel
-from clients.prometheus.models.dto import PrometheusRequestHeaderModel
 from clients.prometheus.models.request import (
+    PrometheusRequestHeaderModel,
     PrometheusQueryV1RequestParameterModel,
     PrometheusQueryRangeV1RequestParameterModel
 )

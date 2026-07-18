@@ -20,8 +20,8 @@ from clients.utility import (
     should_retry_idempotent
 )
 from clients.base import BaseClientModel
-from clients.grafana.models.dto import GrafanaRequestHeaderModel
 from clients.grafana.models.request import (
+    GrafanaRequestHeaderModel,
     GrafanaDsQueryRequestParameterModel,
     GrafanaDsQueryRequestPayloadModel
 )
