@@ -1,12 +1,6 @@
-from pydantic import (
-    Field,
-    field_validator
-)
+from pydantic import Field
 
-from clients.utility import (
-    RequestModel,
-    ResponseModel
-)
+from clients.utility import ResponseModel
 
 from typing import (
     Annotated,
@@ -15,19 +9,6 @@ from typing import (
     Dict,
     List
 )
-
-
-class GrafanaRequestHeaderModel(RequestModel):
-    authorization: Annotated[str, Field(alias='Authorization')]
-    user_agent: Annotated[str, Field(alias='User-Agent')]
-
-    @field_validator('authorization')
-    @classmethod
-    def validate_authorization(cls, v: str) -> str:
-        v = v.strip()
-        if v.startswith('Bearer '):
-            return v
-        return f'Bearer {v}'
 
 
 class TypeInfoModel(ResponseModel):
