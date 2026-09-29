@@ -8,8 +8,9 @@ lifecycles. For formatting rules see [code-style.md](code-style.md).
 Each module defines a single pydantic `BaseModel` subclass that plays two roles
 at once: a **validated settings object** and a **connection factory**.
 
-1. **Settings** — connection parameters are declared as
-   `Annotated[<type>, Field(...)]` fields. `model_config =
+1. **Settings** — connection parameters are declared as pydantic fields, with
+   constraints in `Annotated[<type>, Field(...)]` (see
+   [code-style.md](code-style.md#3-pydantic-declarations)). `model_config =
    ConfigDict(extra='forbid')` rejects unknown keyword arguments so typos fail
    loudly at construction time.
 2. **Factory** — the underlying client/connection is exposed as a lazily
@@ -68,9 +69,6 @@ Context managers simply delegate:
 - **clickhouse.py** — the only model with both sync (`client`) and async
   (`async_client`) factories, and correspondingly both sync and async context
   managers.
-- **hive.py** — a `@model_validator(mode='after')` enforces that `password` is
-  set when `auth` is `'LDAP'` or `'CUSTOM'`. Exposes a `cursor()`
-  contextmanager that closes the cursor in a `finally`.
 - **trino.py** — caches a `BasicAuthentication` (`auth`) alongside the
   connection. Also exposes a `cursor()` contextmanager. The module is named
   `trino.py`, which can shadow the installed `trino` package when the project
@@ -80,7 +78,12 @@ Context managers simply delegate:
   `_perform_urllib_http_request_internal` and `_upload_file`. `SlackModel`
   wraps it with connection- and rate-limit retry handlers. The overrides must
   return dicts with the exact keys `slack_sdk` expects (`status`, `headers`,
-  `body`).
+  `body`), and raise failures as urllib's `HTTPError` / `URLError` so the
+  retry handlers see what they were written for.
+- **jira.py** — a `@model_validator(mode='after')` requires either `token` or
+  both `id` and `password`; `client` builds `jira.JIRA` with token auth when a
+  token is set and basic auth otherwise. `proxy` is passed to the SDK's
+  `requests` session as both the `http` and `https` proxy.
 - **base.py** — `BaseClientModel(BaseModel, ABC)` is the shared contract for the
   httpx clients: common fields (`url_schema`, `verify`, `proxy`, `timeout`),
   abstract `_client` / `_async_client` properties, and the full
@@ -104,29 +107,30 @@ portal is many agencies' APIs behind one host and one `service_key`.
 
 `BaseGoKrOpenDataClientModel` owns the httpx clients, baking the base URL and
 the `service_key` query parameter into them. `GoKrOpenDataModel` then exposes
-one lazily created sub-client per agency — currently `kma_client` — handing it
-the already-configured httpx clients:
+one sub-client per agency — currently `kma_client` — handing it the owner
+itself rather than the httpx clients:
 
 ```python
-@cached_property
+@property
 def kma_client(self) -> KMAClientModel:
-    return KMAClientModel(client=self._client, async_client=self._async_client)
+    return KMAClientModel(owner=self)
 ```
 
 The sub-client (`KMAClientModel`) is a plain class, not a pydantic model: it
-holds no settings of its own, only endpoints and request methods. It therefore
-has no lifecycle — closing belongs to the owner. `GoKrOpenDataModel.close()`
-must drop the cached sub-clients before delegating to `super().close()`, since
-they hold the very httpx client being closed and `BaseClientModel.close()` only
-evicts it from the owning model.
+holds no settings of its own, only endpoints and request methods, and reads
+`owner._client` / `owner._async_client` on each call. Nothing is cached on the
+sub-client, so it has no lifecycle — closing belongs to the owner — and an
+httpx client is built only when a sync or async method first needs it. A
+sync-only caller therefore never builds the async client, and the owner's
+`close()` / `aclose()` cleans up whichever was used (`aclose()` closes both).
 
 Add a new agency by writing `<agency>/main.py` + `models/` under
-`gokr_opendata/`, then adding a `@cached_property` for it on `GoKrOpenDataModel`
-and popping it in `close()` / `aclose()`.
+`gokr_opendata/` with the same `owner` constructor, then adding a `@property`
+for it on `GoKrOpenDataModel`.
 
 Note the portal's error convention: it answers `200 OK` and reports failure in
-the body's `resultCode` (`'00'` success, `'03'` NODATA, `'99'` e.g. a `tm_fc`
-outside the 24h retention window). The KMA methods do not check it — they
+the body's `resultCode` (`'00'` success, `'03'` NODATA, `'99'` e.g. an announcement
+time outside the 24h retention window). The KMA methods do not check it — they
 validate the body and return, so a failed `resultCode` surfaces only as
 `response.body is None`, the same shape NODATA produces. Callers needing the
 distinction read `response.header.result_code`. The library defines no
@@ -147,8 +151,8 @@ thing is a **credential** feeding the SDK's client.
   `scopes`), declares `credential` abstract, and builds the cached
   `GraphServiceClient` from whatever the subclass returns, routing it through an
   httpx `AsyncClient` so `verify`/`proxy` are honoured. One subclass per flow:
-  `MSAppClientModel` (client secret, app-only), `MSDelegateClientModel`
-  (username/password, delegated), `MSDelegateRefreshTokenClientModel` (a stored
+  `MSAppClientModel` (client secret, app-only), `MSDelegatedClientModel`
+  (username/password, delegated), `MSDelegatedRefreshTokenClientModel` (a stored
   refresh token). Add a flow by subclassing and implementing `credential` only.
 - **ms/utility.py** — the refresh-token flow has no `azure.identity` equivalent,
   so it is implemented here. `create_refresh_token` runs the device-code flow

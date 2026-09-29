@@ -1,6 +1,7 @@
+from collections.abc import Generator
 from contextlib import contextmanager
-
 from functools import cached_property
+from types import TracebackType
 
 from pydantic import (
     BaseModel,
@@ -15,93 +16,78 @@ from trino.dbapi import (
     Cursor
 )
 
-from types import TracebackType
-
 from typing import (
     Annotated,
-    Optional,
-    Iterator,
-    Literal,
-    Tuple,
-    Type
+    Any,
+    Literal
 )
 
 
 class TrinoModel(BaseModel):
-    """Pydantic model wrapping a Trino DB-API connection.
-
-    Lazily creates and caches a `Connection` on first access via `conn`,
-    exposes a `cursor()` context manager for per-query cursors, and supports
-    both `with` and explicit `close()` for cleanup.
+    """
+    Typed wrapper for creating and reusing a Trino DB-API connection.
 
     Args:
-        database: Default schema to connect to. Defaults to 'default'.
-        http_scheme: Transport scheme, 'http' or 'https'. Defaults to 'https'.
-        host: Trino coordinator hostname.
-        port: Trino coordinator port.
-        catalog: Catalog to query against. Defaults to 'hive'.
-        username: Username used for basic authentication.
-        password: Password used for basic authentication.
-        request_timeout: (connect, read) timeout in seconds. Defaults to (60, 300).
+        database (str): Default SQL schema name within the selected catalog
+            (for example, `hive.default` -> `default`). Defaults to 'default'.
+        http_scheme (Literal['http', 'https']): HTTP transport scheme for the
+            Trino gateway connection. Defaults to 'https'.
+        host (str): Trino coordinator or gateway host.
+        port (int): Trino coordinator or gateway port.
+        catalog (str): Default catalog name. Defaults to 'hive'.
+        username (str): Login username.
+        password (str): Login password.
+        request_timeout (tuple[int, int]): Connect/read timeout tuple.
+            Defaults to (60, 300).
 
     Attributes:
-        auth: Cached `BasicAuthentication` built from username/password.
-        conn: Cached `Connection`, created on first access.
+        auth (BasicAuthentication): Cached basic authentication object.
+        conn (Connection): Cached DB-API connection.
+
+    Note:
+        - The connection is created lazily on first access to `conn` or
+          `cursor()`, then reused for the same model instance.
+        - `cursor()` is a context manager; use `with api.cursor() as cursor:`.
+        - `cursor()` closes only the cursor.
+        - `with TrinoModel(...) as api:` closes the connection on exit.
+        - You can call `close()` explicitly to close the connection.
 
     Example:
         >>> with TrinoModel(
-        ...     host='localhost',
-        ...     port=8080,
+        ...     host='trino.example.com',
+        ...     port=443,
         ...     username='user',
-        ...     password='secret',
-        ... ) as model:
-        ...     with model.cursor() as cur:
-        ...         cur.execute('SELECT 1')
-        ...         cur.fetchall()
+        ...     password='pw',
+        ... ) as api:
+        ...     with api.cursor() as cursor:
+        ...         cursor.execute('SELECT 1')
+        ...         print(cursor.fetchall())
     """
 
     model_config = ConfigDict(
         extra='forbid',
     )
 
-    database: Annotated[
-        str,
-        Field()
-    ] = 'default'
+    database: str = 'default'
 
-    http_scheme: Annotated[
-        Literal['http', 'https'],
-        Field()
-    ] = 'https'
+    http_scheme: Literal['http', 'https'] = 'https'
 
-    host: Annotated[
-        str,
-        Field()
-    ]
+    host: str
 
-    port: Annotated[
-        int,
-        Field()
-    ]
+    port: int
 
-    catalog: Annotated[
-        str,
-        Field()
-    ] = 'hive'
+    catalog: str = 'hive'
 
-    username: Annotated[
-        str,
-        Field()
-    ]
+    username: str
 
     password: Annotated[
         str,
         Field(repr=False)
     ]
 
-    request_timeout: Annotated[
-        Tuple[float, float],
-        Field()
+    request_timeout: tuple[
+        Annotated[int, Field(gt=0)],
+        Annotated[int, Field(gt=0)]
     ] = (60, 300)
 
     @cached_property
@@ -123,17 +109,17 @@ class TrinoModel(BaseModel):
             auth=self.auth,
             request_timeout=self.request_timeout
         )
-    
+
     @contextmanager
-    def cursor(self, **kwargs) -> Iterator[Cursor]:
+    def cursor(self, **kwargs: Any) -> Generator[Cursor, None, None]:
         cursor: Cursor = self.conn.cursor(**kwargs)
         try:
             yield cursor
         finally:
             cursor.close()
 
-    def close(self):
-        conn: Optional[Connection] = self.__dict__.pop('conn', None)
+    def close(self) -> None:
+        conn: Connection | None = self.__dict__.pop('conn', None)
         if conn is not None:
             conn.close()
 
@@ -142,8 +128,8 @@ class TrinoModel(BaseModel):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None
     ) -> None:
         self.close()
