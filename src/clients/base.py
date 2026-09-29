@@ -101,9 +101,15 @@ class BaseClientModel(BaseModel, ABC):
             client.close()
 
     async def aclose(self) -> None:
+        """
+        Close the async client and, since a sync close is safe to call from
+        async code, the sync client too. `close()` cannot do the reverse, so
+        a model used from both sides should be closed with `async with`.
+        """
         async_client: AsyncClient | None = self.__dict__.pop('_async_client', None)
         if async_client is not None:
             await async_client.aclose()
+        self.close()
 
     def __enter__(self: _T) -> _T:
         return self

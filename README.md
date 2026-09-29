@@ -130,15 +130,17 @@ with GoKrOpenDataModel(service_key='...') as model:
     response = model.kma_client.run_request_get_mid_land_fcst(
         KMAGetMidLandFcstRequestParameterModel(
             reg_id='서울, 인천, 경기도',
-            tm_fc=datetime(2026, 7, 16, 6, 0),
+            forecast_date=datetime(2026, 7, 16),
+            forecast_time='0600',
         )
     )
 ```
 
 `reg_id` (and `stn_id`) accept either the raw code or the 한글 구역명 — a name
 is resolved to its code on validation, so `'서울, 인천, 경기도'` and
-`'11B00000'` are equivalent. `tm_fc` is a `datetime` and is formatted to the
-`YYYYMMDDHHMM` the API expects.
+`'11B00000'` are equivalent. `forecast_date` (only its date is used) and
+`forecast_time` (`'0600'` or `'1800'`, the only two announcement times) are
+combined into the `tmFc` value (`YYYYMMDDHHMM`) the API expects.
 
 Pass `service_key` **decoded**. The client percent-encodes it, so an
 already-encoded key is double-encoded and rejected.
