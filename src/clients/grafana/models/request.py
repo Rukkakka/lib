@@ -8,17 +8,12 @@ from pydantic import (
 
 from clients.utility import RequestModel
 
-from typing import (
-    Annotated,
-    Dict,
-    List,
-    Any
-)
+from typing import Any
 
 
 class GrafanaRequestHeaderModel(RequestModel):
-    authorization: Annotated[str, Field(alias='Authorization')]
-    user_agent: Annotated[str, Field(alias='User-Agent')]
+    authorization: str = Field(alias='Authorization')
+    user_agent: str = Field(alias='User-Agent')
 
     @field_validator('authorization')
     @classmethod
@@ -30,13 +25,13 @@ class GrafanaRequestHeaderModel(RequestModel):
 
 
 class GrafanaDsQueryRequestParameterModel(RequestModel):
-    ds_type: Annotated[str, Field()]
+    ds_type: str
 
 
 class GrafanaDsQueryRequestPayloadModel(RequestModel):
-    queries: Annotated[List[Dict[str, Any]], Field()]
-    from_date: Annotated[datetime, Field(alias='from')]
-    to_date: Annotated[datetime, Field(alias='to')]
+    queries: list[dict[str, Any]]
+    from_date: datetime = Field(alias='from')
+    to_date: datetime = Field(alias='to')
 
     @field_serializer('from_date', 'to_date')
     def serialize_datetime(self, v: datetime) -> str:

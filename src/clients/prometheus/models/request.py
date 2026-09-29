@@ -8,19 +8,14 @@ from pydantic import (
 
 from clients.utility import RequestModel
 
-from typing import (
-    Annotated,
-    Optional
-)
-
 
 class PrometheusRequestHeaderModel(RequestModel):
-    authorization: Annotated[Optional[str], Field(alias='Authorization')] = None
-    user_agent: Annotated[str, Field(alias='User-Agent')]
+    authorization: str | None = Field(default=None, alias='Authorization')
+    user_agent: str = Field(alias='User-Agent')
 
     @field_validator('authorization')
     @classmethod
-    def validate_authorization(cls, v: Optional[str]) -> Optional[str]:
+    def validate_authorization(cls, v: str | None) -> str | None:
         if v is None:
             return None
         v = v.strip()
@@ -30,23 +25,23 @@ class PrometheusRequestHeaderModel(RequestModel):
 
 
 class PrometheusQueryV1RequestParameterModel(RequestModel):
-    query: Annotated[str, Field()]
-    time: Annotated[Optional[datetime], Field()] = None
-    timeout: Annotated[Optional[str], Field()] = None
+    query: str
+    time: datetime | None = None
+    timeout: str | None = None
 
     @field_serializer('time')
-    def serialize_time(self, v: Optional[datetime]) -> Optional[str]:
+    def serialize_time(self, v: datetime | None) -> str | None:
         if v is None:
             return None
         return str(v.timestamp())
 
 
 class PrometheusQueryRangeV1RequestParameterModel(RequestModel):
-    query: Annotated[str, Field()]
-    start_date: Annotated[datetime, Field(alias='start')]
-    end_date: Annotated[datetime, Field(alias='end')]
-    step: Annotated[str, Field()]
-    timeout: Annotated[Optional[str], Field()] = None
+    query: str
+    start_date: datetime = Field(alias='start')
+    end_date: datetime = Field(alias='end')
+    step: str
+    timeout: str | None = None
 
     @field_serializer('start_date', 'end_date')
     def serialize_datetime(self, v: datetime) -> str:

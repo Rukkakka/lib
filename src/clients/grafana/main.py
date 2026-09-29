@@ -63,20 +63,14 @@ class GrafanaClientModel(BaseClientModel):
 
     ds_query_endpoint: ClassVar[str] = '/api/ds/query'
 
-    host: Annotated[
-        str,
-        Field()
-    ]
+    host: str
 
     token: Annotated[
         str,
         Field(repr=False)
     ]
 
-    user_agent: Annotated[
-        str,
-        Field()
-    ]
+    user_agent: str
 
     @property
     def base_url(self) -> str:
@@ -84,14 +78,14 @@ class GrafanaClientModel(BaseClientModel):
             schema=self.url_schema,
             host=self.host
         )
-    
+
     @property
     def base_header(self) -> GrafanaRequestHeaderModel:
         return GrafanaRequestHeaderModel(
             authorization=self.token,
             user_agent=self.user_agent
         )
-    
+
     @cached_property
     def _client(self) -> Client:
         return Client(
@@ -101,7 +95,7 @@ class GrafanaClientModel(BaseClientModel):
             timeout=self.timeout,
             proxy=self.proxy
         )
-    
+
     @cached_property
     def _async_client(self) -> AsyncClient:
         return AsyncClient(
@@ -111,7 +105,7 @@ class GrafanaClientModel(BaseClientModel):
             timeout=self.timeout,
             proxy=self.proxy
         )
-    
+
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
@@ -148,7 +142,7 @@ class GrafanaClientModel(BaseClientModel):
         )
         response.raise_for_status()
         return GrafanaDsQueryResponseModel.model_validate(response.json())
-    
+
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),

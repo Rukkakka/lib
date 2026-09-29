@@ -1,7 +1,8 @@
+from collections.abc import Mapping
+
 from typing import (
     Final,
-    Literal,
-    Mapping
+    Literal
 )
 
 

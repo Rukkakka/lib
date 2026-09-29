@@ -1,8 +1,7 @@
 from .models import (
     RequestModel,
-    ResponseModel
+    ResponseModel,
 )
-
 from .helpers import (
     create_base_url,
     log_retry_before_sleep,

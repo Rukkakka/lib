@@ -100,7 +100,7 @@ transport errors) and `should_retry_non_idempotent` for calls that mutate state
 (5xx/429 only — a transport error may mean the request landed). `reraise=True`
 surfaces the underlying error rather than tenacity's `RetryError`. State the
 retry behaviour in the method docstring, per
-[code-style.md](code-style.md#method-docstrings).
+[code-style.md](code-style.md#51-method-docstrings).
 
 ## Application-level errors
 
@@ -120,24 +120,16 @@ The library defines no exception for this and raises nothing on a failed
 
 ## Default values
 
-Where a field has a default, its placement depends on the model's base:
+Request and response models place defaults the same way: constraints go inside
+`Annotated[T, Field(...)]`, while `default`, `default_factory`, and `alias` go
+at the assignment position, never in the `Field()` inside `Annotated`. See
+[code-style.md section 3](code-style.md#3-pydantic-declarations).
 
-- **`RequestModel` subclasses** — put the default **outside** `Field`, so it
-  shows up in the constructor's type hint for callers:
-
-  ```python
-  timeout: Annotated[Optional[str], Field()] = None
-  ```
-
-- **`ResponseModel` subclasses** — put the default **inside** `Field`:
-
-  ```python
-  nullable: Annotated[Optional[bool], Field(default=None)]
-  ```
-
-The reason is caller ergonomics: request models are constructed by users, so the
-default belongs in the signature; response models are parsed from server
-payloads and are not hand-constructed.
+```python
+timeout: str | None = None
+nullable: bool | None = None
+result_type: str = Field(alias='resultType')
+```
 
 ## Writing DTOs
 
@@ -153,8 +145,8 @@ payloads and are not hand-constructed.
   T = TypeVar('T', bound=ResponseModel)
 
   class DataModel(ResponseModel, Generic[T]):
-      result_type: Annotated[str, Field(alias='resultType')]
-      result: Annotated[List[T], Field()]
+      result_type: str = Field(alias='resultType')
+      result: list[T]
   ```
 
   then specialize per endpoint: `DataModel[QueryResultModel]`.

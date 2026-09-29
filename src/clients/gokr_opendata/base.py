@@ -17,7 +17,7 @@ from typing import Annotated
 
 
 class GokrOpenDataRequestParameterModel(RequestModel):
-    service_key: Annotated[str, Field(alias='serviceKey')]
+    service_key: str = Field(alias='serviceKey')
 
 
 class BaseGoKrOpenDataClientModel(BaseClientModel):
@@ -40,10 +40,7 @@ class BaseGoKrOpenDataClientModel(BaseClientModel):
         base_parameter: The `service_key` query parameter sent on every request.
     """
 
-    host: Annotated[
-        str,
-        Field()
-    ] = 'apis.data.go.kr/'
+    host: str = 'apis.data.go.kr/'
 
     service_key: Annotated[
         str,

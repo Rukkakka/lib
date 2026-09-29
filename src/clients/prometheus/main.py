@@ -4,14 +4,12 @@ from httpx import (
     Client,
     AsyncClient
 )
-
 from tenacity import (
     retry,
     stop_after_attempt,
     wait_fixed,
     retry_if_exception
 )
-
 from pydantic import Field
 
 from clients.utility import (
@@ -32,8 +30,7 @@ from clients.prometheus.models.response import (
 
 from typing import (
     Annotated,
-    ClassVar,
-    Optional
+    ClassVar
 )
 
 
@@ -70,20 +67,14 @@ class PrometheusClientModel(BaseClientModel):
     query_v1_endpoint: ClassVar[str] = '/api/v1/query'
     query_range_v1_endpoint: ClassVar[str] = '/api/v1/query_range'
 
-    host: Annotated[
-        str,
-        Field()
-    ]
+    host: str
 
-    user_agent: Annotated[
-        str,
-        Field()
-    ]
+    user_agent: str
 
     token: Annotated[
-        Optional[str],
-        Field(default=None, repr=False)
-    ]
+        str | None,
+        Field(repr=False)
+    ] = None
 
     @property
     def base_url(self) -> str:

@@ -37,8 +37,12 @@ Shared infrastructure:
 
 Every model follows the same shape:
 
-- `model_config = ConfigDict(extra='forbid')`
-- Fields declared as `Annotated[<type>, Field(...)]`
+- `model_config = ConfigDict(extra='forbid')` by default, so a misspelled
+  setting fails at construction; relax it only where a model has a reason to
+  accept unknown keys
+- Fields declared per the pydantic rules in `references/code-style.md`:
+  constraints in `Annotated[<type>, Field(...)]`, defaults and aliases at the
+  assignment position
 - Secrets (`password`, `token`, `client_secret`, `service_key`, ...) carry
   `Field(repr=False)`
 - The client/connection is built lazily and cached (`@cached_property`, or
@@ -60,8 +64,9 @@ shared pattern:
   `PrometheusQueryV1RequestParameterModel`, `PrometheusQueryV1ResponseModel`.
 - **Model layout.** `request.py` / `response.py` hold only the top-level
   per-endpoint models; shared headers, generic containers (`DataModel[T]`),
-  and common bases live in `dto.py`. Request-model defaults go **outside**
-  `Field` (`= None`); response-model defaults go **inside** (`Field(default=None)`).
+  and common bases live in `dto.py`. Defaults and aliases go at the assignment
+  position (`= None`, `= Field(alias=...)`) in request and response models
+  alike, never in the `Field()` inside `Annotated`.
 
 Full details in **[references/api-client-conventions.md](references/api-client-conventions.md)**.
 
@@ -77,8 +82,8 @@ See [references/architecture.md](references/architecture.md).
 ## Conventions
 
 Read **[references/code-style.md](references/code-style.md)** before editing —
-it defines import ordering, quoting, and docstring format. For how the modules
-fit together, see **[references/architecture.md](references/architecture.md)**.
+it defines string literals, import ordering, pydantic declarations, type
+hints, and docstring format. For how the modules fit together, see **[references/architecture.md](references/architecture.md)**.
 
 ## Workflow
 

@@ -2,40 +2,32 @@ from pydantic import Field
 
 from clients.utility import ResponseModel
 
-from typing import (
-    Annotated,
-    Optional,
-    Union,
-    Dict,
-    List
-)
-
 
 class TypeInfoModel(ResponseModel):
-    frame: Annotated[str, Field()]
-    nullable: Annotated[Optional[bool], Field(default=None)]
+    frame: str
+    nullable: bool | None = None
 
 
 class FieldModel(ResponseModel):
-    name: Annotated[str, Field()]
-    type: Annotated[str, Field()]
-    type_info: Annotated[TypeInfoModel, Field(alias='typeInfo')]
+    name: str
+    type: str
+    type_info: TypeInfoModel = Field(alias='typeInfo')
 
 
 class SchemaModel(ResponseModel):
-    fields: Annotated[List[FieldModel], Field()]
+    fields: list[FieldModel]
 
 
 class DataModel(ResponseModel):
-    values: Annotated[List[List[Optional[Union[int, float, str]]]], Field()]
-    entities: Annotated[Optional[List[Optional[Dict[str, List[int]]]]], Field(default=None)]
+    values: list[list[int | float | str | None]]
+    entities: list[dict[str, list[int]] | None] | None = None
 
 
 class FrameModel(ResponseModel):
-    frame_schema: Annotated[SchemaModel, Field(alias='shema')]
-    data: Annotated[DataModel, Field()]
+    frame_schema: SchemaModel = Field(alias='schema')
+    data: DataModel
 
 
 class RefIdModel(ResponseModel):
-    status: Annotated[int, Field()]
-    frames: Annotated[List[FrameModel], Field()]
+    status: int
+    frames: list[FrameModel]

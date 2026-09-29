@@ -8,8 +8,9 @@ lifecycles. For formatting rules see [code-style.md](code-style.md).
 Each module defines a single pydantic `BaseModel` subclass that plays two roles
 at once: a **validated settings object** and a **connection factory**.
 
-1. **Settings** — connection parameters are declared as
-   `Annotated[<type>, Field(...)]` fields. `model_config =
+1. **Settings** — connection parameters are declared as pydantic fields, with
+   constraints in `Annotated[<type>, Field(...)]` (see
+   [code-style.md](code-style.md#3-pydantic-declarations)). `model_config =
    ConfigDict(extra='forbid')` rejects unknown keyword arguments so typos fail
    loudly at construction time.
 2. **Factory** — the underlying client/connection is exposed as a lazily
