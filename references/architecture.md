@@ -78,7 +78,8 @@ Context managers simply delegate:
   `_perform_urllib_http_request_internal` and `_upload_file`. `SlackModel`
   wraps it with connection- and rate-limit retry handlers. The overrides must
   return dicts with the exact keys `slack_sdk` expects (`status`, `headers`,
-  `body`).
+  `body`), and raise failures as urllib's `HTTPError` / `URLError` so the
+  retry handlers see what they were written for.
 - **base.py** — `BaseClientModel(BaseModel, ABC)` is the shared contract for the
   httpx clients: common fields (`url_schema`, `verify`, `proxy`, `timeout`),
   abstract `_client` / `_async_client` properties, and the full
