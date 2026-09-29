@@ -1,4 +1,6 @@
+import asyncio
 from functools import cached_property
+from types import TracebackType
 
 from pydantic import (
     BaseModel,
@@ -13,67 +15,67 @@ from clickhouse_connect import (
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.asyncclient import AsyncClient
 
-from types import TracebackType
-
 from typing import (
     Annotated,
-    Optional,
-    Type
+    Any
 )
 
+
 class ClickHouseModel(BaseModel):
-    """Pydantic model wrapping a ClickHouse sync/async client connection.
+    """
+    Client model for creating ClickHouse clients with validated connection settings.
 
-    Lazily creates and caches a `Client`/`AsyncClient` on first access via
-    `client`/`async_client`, and supports both `with`/`async with` and
-    explicit `close()`/`aclose()` for cleanup.
-
-    Unlike `client` (a `@cached_property`), `async_client` is a coroutine
-    method — call it as `await model.async_client()`. An async client must be
-    built with `await get_async_client(...)`, which `@cached_property` cannot
-    do, so it is cached manually into `self.__dict__`.
+    This model centralizes synchronous and asynchronous client creation via
+    `clickhouse-connect`.
 
     Args:
-        host: ClickHouse server hostname.
-        port: ClickHouse server port.
-        username: Username used for authentication.
-        password: Password used for authentication.
-        connect_timeout: Connection timeout in seconds. Defaults to 120.
-        send_receive_timeout: Send/receive timeout in seconds. Defaults to 300.
+        host (str): ClickHouse host address.
+        port (int): ClickHouse HTTP(S) port.
+        username (str): Username for authentication.
+        password (str): Password for authentication.
+        connect_timeout (int): Connection timeout in seconds. Defaults to 120.
+        send_receive_timeout (int): Request I/O timeout in seconds.
+            Defaults to 300.
+        client_options (dict[str, Any]): Extra keyword arguments passed as is
+            to `get_client()` / `get_async_client()` (e.g. ``database``,
+            ``secure``, ``settings``). Keys that overlap with the fields
+            above take precedence over them. Defaults to {}.
 
     Attributes:
-        client: Cached sync `Client`, created on first access.
-        async_client: Coroutine method returning the cached async
-            `AsyncClient`; awaited and cached on first call.
+        client (Client): Cached synchronous ClickHouse client.
+        async_client (Callable[..., Awaitable[AsyncClient]]): Coroutine method
+            returning the asynchronous client cached for the running event loop.
 
     Example:
         >>> with ClickHouseModel(
-        ...     host='localhost',
-        ...     port=8123,
-        ...     username='default',
-        ...     password='',
-        ... ) as model:
-        ...     model.client.query('SELECT 1')
+        ...     host='clickhouse.example.com',
+        ...     port=8443,
+        ...     username='user',
+        ...     password='secret',
+        ... ) as api:
+        ...     rows = api.client.query('SELECT 1').result_set
+
+        >>> async def run_query():
+        ...     async with ClickHouseModel(
+        ...         host='clickhouse.example.com',
+        ...         port=8443,
+        ...         username='user',
+        ...         password='secret',
+        ...     ) as api:
+        ...         client = await api.async_client()
+        ...         result = await client.query('SELECT 1')
+        ...         return result.result_rows
     """
 
     model_config = ConfigDict(
         extra='forbid',
     )
 
-    host: Annotated[
-        str,
-        Field()
-    ]
+    host: str
 
-    port: Annotated[
-        int,
-        Field()
-    ]
+    port: int
 
-    username: Annotated[
-        str,
-        Field()
-    ]
+    username: str
 
     password: Annotated[
         str,
@@ -82,62 +84,79 @@ class ClickHouseModel(BaseModel):
 
     connect_timeout: Annotated[
         int,
-        Field()
+        Field(gt=0)
     ] = 120
 
     send_receive_timeout: Annotated[
         int,
-        Field()
+        Field(gt=0)
     ] = 300
+
+    client_options: Annotated[
+        dict[str, Any],
+        Field(repr=False)
+    ] = {}
+
+    def _client_kwargs(self) -> dict[str, Any]:
+        return {
+            'host': self.host,
+            'port': self.port,
+            'username': self.username,
+            'password': self.password,
+            'connect_timeout': self.connect_timeout,
+            'send_receive_timeout': self.send_receive_timeout,
+            **self.client_options,
+        }
 
     @cached_property
     def client(self) -> Client:
-        return get_client(
-            host=self.host,
-            port=self.port,
-            username=self.username,
-            password=self.password,
-            connect_timeout=self.connect_timeout,
-            send_receive_timeout=self.send_receive_timeout
-        )
-    
-    async def async_client(self) -> AsyncClient:
-        """Return the cached async client, creating it on first call.
+        return get_client(**self._client_kwargs())
 
-        A coroutine method rather than a property because the client is built
-        with `await get_async_client(...)`, which `@cached_property` cannot do;
-        the result is cached manually into `self.__dict__` under `_async_client`
-        — not under this method's own name, which would shadow it.
+    async def async_client(self) -> AsyncClient:
         """
-        if '_async_client' not in self.__dict__:
-            self.__dict__['_async_client'] = await get_async_client(
-                host=self.host,
-                port=self.port,
-                username=self.username,
-                password=self.password,
-                connect_timeout=self.connect_timeout,
-                send_receive_timeout=self.send_receive_timeout
-            )
-        return self.__dict__['_async_client']
+        Return the asynchronous client for the running event loop, creating it
+        on first call.
+
+        clickhouse-connect's AsyncClient holds an aiohttp session bound to the
+        event loop it was created on, so the client is cached together with
+        that loop and rebuilt when called from a different one. It is cached
+        manually into `self.__dict__` under `_async_client` because it has to
+        be awaited, which `@cached_property` cannot do.
+
+        Note:
+            A client left behind by a loop change is dropped without being
+            closed, since its loop may already be gone. Close each loop's client
+            with `aclose()` or `async with` before that loop ends.
+        """
+        loop = asyncio.get_running_loop()
+        cached: tuple[asyncio.AbstractEventLoop, AsyncClient] | None = (
+            self.__dict__.get('_async_client')
+        )
+        if cached is None or cached[0] is not loop:
+            cached = (loop, await get_async_client(**self._client_kwargs()))
+            self.__dict__['_async_client'] = cached
+        return cached[1]
 
     def close(self) -> None:
-        client: Optional[Client] = self.__dict__.pop('client', None)
+        client: Client | None = self.__dict__.pop('client', None)
         if client is not None:
             client.close()
 
     async def aclose(self) -> None:
-        async_client: Optional[AsyncClient] = self.__dict__.pop('_async_client', None)
-        if async_client is not None:
-            await async_client.close()
+        cached: tuple[asyncio.AbstractEventLoop, AsyncClient] | None = (
+            self.__dict__.pop('_async_client', None)
+        )
+        if cached is not None:
+            await cached[1].close()
 
     def __enter__(self) -> 'ClickHouseModel':
         return self
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None
     ) -> None:
         self.close()
 
@@ -146,8 +165,8 @@ class ClickHouseModel(BaseModel):
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None
     ) -> None:
         await self.aclose()

@@ -1,7 +1,7 @@
 from .main import (
     MSBaseClientModel,
     MSAppClientModel,
-    MSDelegateClientModel,
-    MSDelegateRefreshTokenClientModel
+    MSDelegatedClientModel,
+    MSDelegatedRefreshTokenClientModel,
 )
 from .utility import create_refresh_token

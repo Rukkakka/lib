@@ -12,9 +12,9 @@ Flat DB/service modules:
 | Module          | Model             | Wraps                               |
 | --------------- | ----------------- | ----------------------------------- |
 | `clickhouse.py` | `ClickHouseModel` | `clickhouse_connect` (sync + async) |
-| `hive.py`       | `HiveModel`       | `pyhive` Hive DB-API                |
 | `trino.py`      | `TrinoModel`      | `trino` DB-API                      |
 | `slack.py`      | `SlackModel`      | `slack_sdk` Web API over `httpx`    |
+| `jira.py`       | `JiraClientModel` | `jira` SDK (`jira.JIRA`)            |
 
 Packages:
 
@@ -23,7 +23,7 @@ Packages:
 | `grafana/`       | `GrafanaClientModel`                         | Grafana HTTP API (`/api/ds/query`)                   |
 | `prometheus/`    | `PrometheusClientModel`                      | Prometheus HTTP query API                            |
 | `gokr_opendata/` | `GoKrOpenDataModel` → `kma_client`           | 공공데이터포털 (data.go.kr), 기상청 중기예보          |
-| `ms/`            | `MSAppClientModel`, `MSDelegate*ClientModel` | Microsoft Graph via `msgraph` + `azure.identity`     |
+| `ms/`            | `MSAppClientModel`, `MSDelegated*ClientModel` | Microsoft Graph via `msgraph` + `azure.identity`     |
 | `google/`        | `GdriveModel`, `GspreadModel`, `GoogleModel` | Google Drive / Sheets (`googleapiclient`, `gspread`) |
 
 Shared infrastructure:
@@ -37,8 +37,12 @@ Shared infrastructure:
 
 Every model follows the same shape:
 
-- `model_config = ConfigDict(extra='forbid')`
-- Fields declared as `Annotated[<type>, Field(...)]`
+- `model_config = ConfigDict(extra='forbid')` by default, so a misspelled
+  setting fails at construction; relax it only where a model has a reason to
+  accept unknown keys
+- Fields declared per the pydantic rules in `references/code-style.md`:
+  constraints in `Annotated[<type>, Field(...)]`, defaults and aliases at the
+  assignment position
 - Secrets (`password`, `token`, `client_secret`, `service_key`, ...) carry
   `Field(repr=False)`
 - The client/connection is built lazily and cached (`@cached_property`, or
@@ -60,8 +64,9 @@ shared pattern:
   `PrometheusQueryV1RequestParameterModel`, `PrometheusQueryV1ResponseModel`.
 - **Model layout.** `request.py` / `response.py` hold only the top-level
   per-endpoint models; shared headers, generic containers (`DataModel[T]`),
-  and common bases live in `dto.py`. Request-model defaults go **outside**
-  `Field` (`= None`); response-model defaults go **inside** (`Field(default=None)`).
+  and common bases live in `dto.py`. Defaults and aliases go at the assignment
+  position (`= None`, `= Field(alias=...)`) in request and response models
+  alike, never in the `Field()` inside `Annotated`.
 
 Full details in **[references/api-client-conventions.md](references/api-client-conventions.md)**.
 
@@ -77,8 +82,8 @@ See [references/architecture.md](references/architecture.md).
 ## Conventions
 
 Read **[references/code-style.md](references/code-style.md)** before editing —
-it defines import ordering, quoting, and docstring format. For how the modules
-fit together, see **[references/architecture.md](references/architecture.md)**.
+it defines string literals, import ordering, pydantic declarations, type
+hints, and docstring format. For how the modules fit together, see **[references/architecture.md](references/architecture.md)**.
 
 ## Workflow
 
@@ -96,8 +101,8 @@ body. One concern per commit; stage paths deliberately, not `git add -A`.
 
 `base.py`'s `BaseClientModel` is the shared base for the httpx API clients
 (`GrafanaClientModel`, `PrometheusClientModel`, `BaseGoKrOpenDataClientModel`).
-The four DB/service models (`ClickHouseModel`, `HiveModel`, `TrinoModel`,
-`SlackModel`) do **not** inherit it — they re-implement the lifecycle
+The four DB/service models (`ClickHouseModel`, `TrinoModel`, `SlackModel`,
+`JiraClientModel`) do **not** inherit it — they re-implement the lifecycle
 independently. Treat it as the intended shared base and reconcile with it when
 refactoring those models. The credential-based clients (`ms/`, `google/`) sit
 outside it by design.

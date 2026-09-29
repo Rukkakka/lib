@@ -15,13 +15,6 @@ tenacity>=9.1,<10
 # clients.clickhouse
 clickhouse-connect>=1.4,<2
 
-# clients.hive
-# The thrift transport is an extra; plain PyHive can't connect without it.
-# Uses `hive_pure_sasl` (pure-sasl) rather than `hive` (sasl): the `sasl` C
-# extension doesn't build on Python 3.11, and HiveModel only does PLAIN auth
-# (NONE/LDAP/CUSTOM/NOSASL), which pure-sasl covers. Kerberos would need `sasl`.
-PyHive[hive_pure_sasl]>=0.7,<0.8
-
 # clients.trino
 trino>=0.338,<1
 
@@ -38,3 +31,6 @@ google-api-python-client>=2.198,<3
 google-auth>=2.56,<3
 gspread>=6.2,<7
 pydata-google-auth>=1.9,<2
+
+# clients.jira
+jira>=3.10,<4

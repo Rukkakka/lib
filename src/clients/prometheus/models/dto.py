@@ -3,10 +3,6 @@ from pydantic import Field
 from clients.utility import ResponseModel
 
 from typing import (
-    Annotated,
-    Dict,
-    List,
-    Union,
     TypeVar,
     Generic
 )
@@ -15,17 +11,17 @@ T = TypeVar('T', bound=ResponseModel)
 
 
 class ResultModel(ResponseModel):
-    metric: Annotated[Dict[str, str], Field()]
+    metric: dict[str, str]
 
 
 class QueryResultModel(ResultModel):
-    value: Annotated[List[Union[float, str]], Field()]
+    value: list[float | str]
 
 
 class QueryRangeResultModel(ResultModel):
-    values: Annotated[List[List[Union[float, str]]], Field()]
+    values: list[list[float | str]]
 
 
 class DataModel(ResponseModel, Generic[T]):
-    result_type: Annotated[str, Field(alias='resultType')]
-    result: Annotated[List[T], Field()]
+    result_type: str = Field(alias='resultType')
+    result: list[T]
