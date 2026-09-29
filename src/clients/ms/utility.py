@@ -3,7 +3,6 @@ from collections.abc import (
     Sequence,
 )
 import asyncio
-import threading
 import time
 
 import httpx
@@ -136,8 +135,13 @@ def create_refresh_token(
 
 class _RefreshTokenCredential:
     """
-    azure-core ``TokenCredential`` that exchanges an OAuth2 refresh
+    azure-core ``AsyncTokenCredential`` that exchanges an OAuth2 refresh
     token for an access token via the ``refresh_token`` grant.
+
+    ``get_token`` and ``close`` are coroutines so the kiota Azure auth provider
+    awaits them instead of blocking the event loop on the token round-trip; the
+    provider awaits ``close`` after every fetch, which is safe here because each
+    exchange uses its own ``AsyncClient``.
 
     Microsoft rotates the refresh token on every grant; the new value
     replaces the in-memory copy and is exposed via ``refresh_token``.
@@ -173,8 +177,7 @@ class _RefreshTokenCredential:
         self._proxy = proxy
         self._on_refresh = on_refresh
         self._cached: AccessToken | None = None
-        self._lock = threading.Lock()
-        self._async_lock = asyncio.Lock()
+        self._lock = asyncio.Lock()
 
     @property
     def refresh_token(self) -> str:
@@ -198,18 +201,7 @@ class _RefreshTokenCredential:
             int(time.time() + body.get('expires_in', 0)),
         )
 
-    def _exchange(self, scopes: tuple) -> AccessToken:
-        response = httpx.post(
-            f'https://login.microsoftonline.com/{self._tenant_id}/oauth2/v2.0/token',
-            data=self._token_request_data(scopes),
-            verify=self._verify,
-            proxy=self._proxy,
-            timeout=30.0,
-        )
-        raise_for_status(response=response)
-        return self._build_access_token(response.json())
-
-    async def _exchange_async(self, scopes: tuple) -> AccessToken:
+    async def _exchange(self, scopes: tuple) -> AccessToken:
         async with httpx.AsyncClient(
             verify=self._verify,
             proxy=self._proxy,
@@ -222,23 +214,14 @@ class _RefreshTokenCredential:
         raise_for_status(response=response)
         return self._build_access_token(response.json())
 
-    def get_token(self, *scopes: str, **_: Any) -> AccessToken:
+    async def get_token(self, *scopes: str, **_: Any) -> AccessToken:
         if self._cached and self._cached.expires_on - time.time() > 300:
             return self._cached
-        with self._lock:
+        async with self._lock:
             if self._cached and self._cached.expires_on - time.time() > 300:
                 return self._cached
-            self._cached = self._exchange(scopes)
+            self._cached = await self._exchange(scopes)
             return self._cached
 
-    async def get_token_async(self, *scopes: str, **_: Any) -> AccessToken:
-        if self._cached and self._cached.expires_on - time.time() > 300:
-            return self._cached
-        async with self._async_lock:
-            if self._cached and self._cached.expires_on - time.time() > 300:
-                return self._cached
-            self._cached = await self._exchange_async(scopes)
-            return self._cached
-
-    def close(self) -> None:
+    async def close(self) -> None:
         return None

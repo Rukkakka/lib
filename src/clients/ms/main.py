@@ -1,4 +1,5 @@
 from functools import cached_property
+from inspect import isawaitable
 from types import TracebackType
 from abc import (
     ABC,
@@ -130,7 +131,11 @@ class MSBaseClientModel(BaseModel, ABC):
             await http_client.aclose()
         credential = self.__dict__.pop('credential', None)
         if credential is not None:
-            credential.close()
+            # azure.identity credentials close synchronously; the refresh-token
+            # credential's close is a coroutine.
+            closed = credential.close()
+            if isawaitable(closed):
+                await closed
 
     async def __aenter__(self) -> Self:
         return self

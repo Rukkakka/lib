@@ -287,6 +287,8 @@ class GoogleModel(GoogleCredentialsModel):
             makes, including the discovery document fetch and token refreshes.
             It takes precedence over the proxy environment variables, as it
             does on the `httpx` based clients. Defaults to None.
+        static_discovery (bool): Build from the discovery document bundled
+            with `googleapiclient` instead of fetching it. Defaults to False.
 
     Attributes:
         credentials (Credentials): Google OAuth2 credentials, see
@@ -313,6 +315,8 @@ class GoogleModel(GoogleCredentialsModel):
 
     proxy: str | None = None
 
+    static_discovery: bool = False
+
     @cached_property
     def client(self) -> Any:
         # Same transport `build(credentials=...)` would assemble, spelled out
@@ -323,7 +327,7 @@ class GoogleModel(GoogleCredentialsModel):
             serviceName=self.service_name,
             version=self.version,
             http=AuthorizedHttp(self.credentials, http=http),
-            static_discovery=False,
+            static_discovery=self.static_discovery,
         )
 
     def close(self) -> None:
