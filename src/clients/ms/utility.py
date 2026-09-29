@@ -1,4 +1,7 @@
-from collections.abc import Sequence
+from collections.abc import (
+    Callable,
+    Sequence,
+)
 import asyncio
 import threading
 import time
@@ -138,7 +141,8 @@ class _RefreshTokenCredential:
 
     Microsoft rotates the refresh token on every grant; the new value
     replaces the in-memory copy and is exposed via ``refresh_token``.
-    Persist it externally if cross-process continuity is required.
+    ``on_refresh`` is invoked with each newly issued value so the owning
+    model can mirror it and persist it externally.
 
     Args:
         tenant_id (str): Azure AD tenant id.
@@ -147,6 +151,9 @@ class _RefreshTokenCredential:
             via an interactive flow (e.g. device code).
         verify (bool): TLS certificate verification flag. Defaults to True.
         proxy (str | None): Proxy URL for the token requests.
+            Defaults to None.
+        on_refresh (Callable[[str], None] | None): Called with the rotated
+            refresh token after every grant that issues a new one.
             Defaults to None.
     """
 
@@ -157,12 +164,14 @@ class _RefreshTokenCredential:
         refresh_token: str,
         verify: bool = True,
         proxy: str | None = None,
+        on_refresh: Callable[[str], None] | None = None,
     ) -> None:
         self._tenant_id = tenant_id
         self._client_id = client_id
         self._refresh_token = refresh_token
         self._verify = verify
         self._proxy = proxy
+        self._on_refresh = on_refresh
         self._cached: AccessToken | None = None
         self._lock = threading.Lock()
         self._async_lock = asyncio.Lock()
@@ -182,6 +191,8 @@ class _RefreshTokenCredential:
     def _build_access_token(self, body: dict) -> AccessToken:
         if body.get('refresh_token'):
             self._refresh_token = body['refresh_token']
+            if self._on_refresh is not None:
+                self._on_refresh(self._refresh_token)
         return AccessToken(
             body['access_token'],
             int(time.time() + body.get('expires_in', 0)),

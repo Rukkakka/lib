@@ -325,12 +325,12 @@ class MSDelegatedRefreshTokenClientModel(MSBaseClientModel):
     the OAuth2 token endpoint. No prompt is ever shown; if the refresh
     token is invalid or expired, ``credential.get_token`` raises.
 
-    Microsoft rotates the refresh token on every grant. The credential
-    keeps the latest value in memory and exposes it via
-    ``credential.refresh_token``; persist it externally if cross-process
-    continuity is required, otherwise the next process restart begins
-    from the original value, which may be invalidated by a later
-    rotation.
+    Microsoft rotates the refresh token on every grant. Each rotation is
+    written back onto this model, so ``refresh_token`` keeps mirroring the
+    latest issued value rather than the one the model was constructed with.
+    Persisting it is still the caller's job: re-serialize the model once the
+    work is done, for example ``model.model_dump_json()`` back into a secret
+    store, or the stored token goes stale and a later rotation invalidates it.
 
     Args:
         tenant_id (str): Azure AD tenant id.
@@ -348,8 +348,7 @@ class MSDelegatedRefreshTokenClientModel(MSBaseClientModel):
 
     Attributes:
         credential (_RefreshTokenCredential): Cached refresh-token-backed
-            credential. ``credential.refresh_token`` exposes the latest
-            rotated value.
+            credential. Rotations are mirrored back onto ``refresh_token``.
         client (GraphServiceClient): Cached Graph SDK client.
 
     See:
@@ -387,6 +386,9 @@ class MSDelegatedRefreshTokenClientModel(MSBaseClientModel):
         Field(repr=False)
     ]
 
+    def _sync_refresh_token(self, refresh_token: str) -> None:
+        self.refresh_token = refresh_token
+
     @cached_property
     def credential(self) -> _RefreshTokenCredential:
         return _RefreshTokenCredential(
@@ -395,4 +397,5 @@ class MSDelegatedRefreshTokenClientModel(MSBaseClientModel):
             refresh_token=self.refresh_token,
             verify=self.verify,
             proxy=self.proxy,
+            on_refresh=self._sync_refresh_token,
         )
