@@ -30,7 +30,7 @@ Credential-based clients (wrap a vendor SDK rather than `httpx`):
 
 | Import           | Model / entry point                                                          | Wraps                    |
 | ---------------- | ---------------------------------------------------------------------------- | ------------------------ |
-| `clients.ms`          | `MSAppClientModel`, `MSDelegateClientModel`, `MSDelegateRefreshTokenClientModel` | Microsoft Graph          |
+| `clients.ms`          | `MSAppClientModel`, `MSDelegatedClientModel`, `MSDelegatedRefreshTokenClientModel` | Microsoft Graph          |
 | `clients.google.main` | `GdriveModel`, `GspreadModel`, `GoogleModel`                                 | Google Drive  /  Sheets  |
 
 ## Usage

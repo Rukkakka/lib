@@ -145,8 +145,8 @@ thing is a **credential** feeding the SDK's client.
   `scopes`), declares `credential` abstract, and builds the cached
   `GraphServiceClient` from whatever the subclass returns, routing it through an
   httpx `AsyncClient` so `verify`/`proxy` are honoured. One subclass per flow:
-  `MSAppClientModel` (client secret, app-only), `MSDelegateClientModel`
-  (username/password, delegated), `MSDelegateRefreshTokenClientModel` (a stored
+  `MSAppClientModel` (client secret, app-only), `MSDelegatedClientModel`
+  (username/password, delegated), `MSDelegatedRefreshTokenClientModel` (a stored
   refresh token). Add a flow by subclassing and implementing `credential` only.
 - **ms/utility.py** — the refresh-token flow has no `azure.identity` equivalent,
   so it is implemented here. `create_refresh_token` runs the device-code flow

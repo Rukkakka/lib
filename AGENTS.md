@@ -22,7 +22,7 @@ Packages:
 | `grafana/`       | `GrafanaClientModel`                         | Grafana HTTP API (`/api/ds/query`)                   |
 | `prometheus/`    | `PrometheusClientModel`                      | Prometheus HTTP query API                            |
 | `gokr_opendata/` | `GoKrOpenDataModel` → `kma_client`           | 공공데이터포털 (data.go.kr), 기상청 중기예보          |
-| `ms/`            | `MSAppClientModel`, `MSDelegate*ClientModel` | Microsoft Graph via `msgraph` + `azure.identity`     |
+| `ms/`            | `MSAppClientModel`, `MSDelegated*ClientModel` | Microsoft Graph via `msgraph` + `azure.identity`     |
 | `google/`        | `GdriveModel`, `GspreadModel`, `GoogleModel` | Google Drive / Sheets (`googleapiclient`, `gspread`) |
 
 Shared infrastructure:
