@@ -69,9 +69,6 @@ Context managers simply delegate:
 - **clickhouse.py** — the only model with both sync (`client`) and async
   (`async_client`) factories, and correspondingly both sync and async context
   managers.
-- **hive.py** — a `@model_validator(mode='after')` enforces that `password` is
-  set when `auth` is `'LDAP'` or `'CUSTOM'`. Exposes a `cursor()`
-  contextmanager that closes the cursor in a `finally`.
 - **trino.py** — caches a `BasicAuthentication` (`auth`) alongside the
   connection. Also exposes a `cursor()` contextmanager. The module is named
   `trino.py`, which can shadow the installed `trino` package when the project
@@ -87,7 +84,7 @@ Context managers simply delegate:
   abstract `_client` / `_async_client` properties, and the full
   close/aclose/context-manager surface. `GrafanaClientModel`,
   `PrometheusClientModel`, and `BaseGoKrOpenDataClientModel` inherit it; the
-  four DB/service models above do not.
+  three DB/service models above do not.
 - **utility/** — the pieces the httpx clients share. `models.py` holds the two
   pydantic bases every DTO descends from: `RequestModel` (`extra='forbid'`) and
   `ResponseModel` (`extra='allow'`, so a server adding a field does not break

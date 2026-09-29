@@ -15,7 +15,6 @@ Database and service clients:
 | Import                     | Model             | Wraps                               |
 | -------------------------- | ----------------- | ----------------------------------- |
 | `clients.clickhouse`       | `ClickHouseModel` | `clickhouse_connect` (sync + async) |
-| `clients.hive`             | `HiveModel`       | `pyhive` Hive DB-API                |
 | `clients.trino`            | `TrinoModel`      | `trino` DB-API                      |
 | `clients.slack`            | `SlackModel`      | `slack_sdk` Web API over `httpx`    |
 
@@ -58,7 +57,7 @@ with TrinoModel(
         rows = cur.fetchall()
 ```
 
-`HiveModel` has the same shape. `ClickHouseModel` exposes a client rather than a
+`ClickHouseModel` exposes a client rather than a
 cursor, and additionally supports async:
 
 ```python
