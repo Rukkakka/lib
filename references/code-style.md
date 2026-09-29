@@ -212,9 +212,10 @@ point at its sync counterpart instead of repeating Args/Returns/retry.
 def run_request_query_v1(self, parameter):
     """Run an instant query via `GET /api/v1/query`.
 
-    Retries up to 3 attempts (1s fixed wait) on HTTP 5xx/429 responses and
-    httpx timeout/transport errors; any other error, and the final failed
-    attempt, is raised.
+    Retries up to 3 attempts on HTTP 5xx/429 responses and httpx
+    timeout/transport errors, waiting 1s between attempts or, on a 429,
+    the server's `Retry-After` (capped at 60s); any other error, and the
+    final failed attempt, is raised.
 
     Args:
         parameter: Instant-query parameters - `query` (PromQL, required)

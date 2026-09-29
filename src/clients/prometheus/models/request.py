@@ -6,7 +6,10 @@ from pydantic import (
     field_validator
 )
 
-from clients.utility import RequestModel
+from clients.utility import (
+    bearer_authorization,
+    RequestModel
+)
 
 
 class PrometheusRequestHeaderModel(RequestModel):
@@ -18,10 +21,7 @@ class PrometheusRequestHeaderModel(RequestModel):
     def validate_authorization(cls, v: str | None) -> str | None:
         if v is None:
             return None
-        v = v.strip()
-        if v.startswith('Bearer '):
-            return v
-        return f'Bearer {v}'
+        return bearer_authorization(v)
 
 
 class PrometheusQueryV1RequestParameterModel(RequestModel):

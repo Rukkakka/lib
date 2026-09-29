@@ -1,7 +1,6 @@
 from tenacity import (
     retry,
     stop_after_attempt,
-    wait_fixed,
     retry_if_exception
 )
 
@@ -12,7 +11,9 @@ from httpx import (
 
 from clients.utility import (
     log_retry_before_sleep,
-    should_retry_idempotent
+    raise_for_status,
+    should_retry_idempotent,
+    wait_retry_after
 )
 from clients.gokr_opendata.kma.models.request import (
     KMAGetMidFcstRequestParameterModel,
@@ -83,7 +84,7 @@ class KMAClientModel:
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -93,9 +94,10 @@ class KMAClientModel:
     ) -> KMAGetMidFcstResponseModel:
         """Fetch the mid-term outlook via `GET /1360000/MidFcstInfoService/getMidFcst`.
 
-        Retries up to 3 attempts (1s fixed wait) on HTTP 5xx/429 responses and
-        httpx timeout/transport errors; any other error, and the final failed
-        attempt, is raised.
+        Retries up to 3 attempts on HTTP 5xx/429 responses and httpx
+        timeout/transport errors, waiting 1s between attempts or, on a 429,
+        the server's `Retry-After` (capped at 60s); any other error, and the
+        final failed attempt, is raised.
 
         Args:
             parameter: Query parameters — `stn_id` (지점번호) and `tm_fc`
@@ -113,13 +115,13 @@ class KMAClientModel:
             url=self.mid_fcst_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return KMAGetMidFcstResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -139,13 +141,13 @@ class KMAClientModel:
             url=self.mid_fcst_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return KMAGetMidFcstResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -155,9 +157,10 @@ class KMAClientModel:
     ) -> KMAGetMidLandFcstResponseModel:
         """Fetch the mid-term land forecast via `GET /1360000/MidFcstInfoService/getMidLandFcst`.
 
-        Retries up to 3 attempts (1s fixed wait) on HTTP 5xx/429 responses and
-        httpx timeout/transport errors; any other error, and the final failed
-        attempt, is raised.
+        Retries up to 3 attempts on HTTP 5xx/429 responses and httpx
+        timeout/transport errors, waiting 1s between attempts or, on a 429,
+        the server's `Retry-After` (capped at 60s); any other error, and the
+        final failed attempt, is raised.
 
         Args:
             parameter: Query parameters — `reg_id` (예보구역코드) and `tm_fc`
@@ -176,13 +179,13 @@ class KMAClientModel:
             url=self.mid_land_fcst_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return KMAGetMidLandFcstResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -202,13 +205,13 @@ class KMAClientModel:
             url=self.mid_land_fcst_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return KMAGetMidLandFcstResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -218,9 +221,10 @@ class KMAClientModel:
     ) -> KMAGetMidTaResponseModel:
         """Fetch the mid-term temperature forecast via `GET /1360000/MidFcstInfoService/getMidTa`.
 
-        Retries up to 3 attempts (1s fixed wait) on HTTP 5xx/429 responses and
-        httpx timeout/transport errors; any other error, and the final failed
-        attempt, is raised.
+        Retries up to 3 attempts on HTTP 5xx/429 responses and httpx
+        timeout/transport errors, waiting 1s between attempts or, on a 429,
+        the server's `Retry-After` (capped at 60s); any other error, and the
+        final failed attempt, is raised.
 
         Args:
             parameter: Query parameters — `reg_id` (예보구역코드) and `tm_fc`
@@ -239,13 +243,13 @@ class KMAClientModel:
             url=self.mid_ta_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return KMAGetMidTaResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -265,13 +269,13 @@ class KMAClientModel:
             url=self.mid_ta_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return KMAGetMidTaResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -281,9 +285,10 @@ class KMAClientModel:
     ) -> KMAGetMidSeaFcstResponseModel:
         """Fetch the mid-term sea forecast via `GET /1360000/MidFcstInfoService/getMidSeaFcst`.
 
-        Retries up to 3 attempts (1s fixed wait) on HTTP 5xx/429 responses and
-        httpx timeout/transport errors; any other error, and the final failed
-        attempt, is raised.
+        Retries up to 3 attempts on HTTP 5xx/429 responses and httpx
+        timeout/transport errors, waiting 1s between attempts or, on a 429,
+        the server's `Retry-After` (capped at 60s); any other error, and the
+        final failed attempt, is raised.
 
         Args:
             parameter: Query parameters — `reg_id` (해상 예보구역코드) and
@@ -302,13 +307,13 @@ class KMAClientModel:
             url=self.mid_sea_fcst_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return KMAGetMidSeaFcstResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -328,5 +333,5 @@ class KMAClientModel:
             url=self.mid_sea_fcst_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return KMAGetMidSeaFcstResponseModel.model_validate(response.json())

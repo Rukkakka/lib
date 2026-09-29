@@ -6,7 +6,10 @@ from pydantic import (
     field_validator
 )
 
-from clients.utility import RequestModel
+from clients.utility import (
+    bearer_authorization,
+    RequestModel
+)
 
 from typing import Any
 
@@ -18,10 +21,7 @@ class GrafanaRequestHeaderModel(RequestModel):
     @field_validator('authorization')
     @classmethod
     def validate_authorization(cls, v: str) -> str:
-        v = v.strip()
-        if v.startswith('Bearer '):
-            return v
-        return f'Bearer {v}'
+        return bearer_authorization(v)
 
 
 class GrafanaDsQueryRequestParameterModel(RequestModel):
@@ -35,4 +35,4 @@ class GrafanaDsQueryRequestPayloadModel(RequestModel):
 
     @field_serializer('from_date', 'to_date')
     def serialize_datetime(self, v: datetime) -> str:
-        return str(int(v.timestamp()) * 1000)
+        return str(int(v.timestamp() * 1000))

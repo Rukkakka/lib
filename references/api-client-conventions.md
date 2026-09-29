@@ -89,11 +89,16 @@ Wrap every request method in tenacity `@retry` with the shared predicates from
 @retry(
     retry=retry_if_exception(should_retry_idempotent),
     stop=stop_after_attempt(3),
-    wait=wait_fixed(1),
+    wait=wait_retry_after,
     reraise=True,
     before_sleep=log_retry_before_sleep,
 )
 ```
+
+`wait_retry_after` waits 1s between attempts, except on a response carrying a
+`Retry-After` header (typically a 429), where it waits what the server asked
+for, capped at 60s. A fixed 1s wait would spend every attempt inside a
+rate-limit window.
 
 Use `should_retry_idempotent` for reads (retries 5xx/429 plus timeout and
 transport errors) and `should_retry_non_idempotent` for calls that mutate state

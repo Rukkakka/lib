@@ -7,15 +7,16 @@ from httpx import (
 from tenacity import (
     retry,
     stop_after_attempt,
-    wait_fixed,
     retry_if_exception
 )
 from pydantic import Field
 
 from clients.utility import (
     log_retry_before_sleep,
+    raise_for_status,
     create_base_url,
-    should_retry_idempotent
+    should_retry_idempotent,
+    wait_retry_after
 )
 from clients.base import BaseClientModel
 from clients.prometheus.models.request import (
@@ -113,7 +114,7 @@ class PrometheusClientModel(BaseClientModel):
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -123,9 +124,10 @@ class PrometheusClientModel(BaseClientModel):
     ) -> PrometheusQueryV1ResponseModel:
         """Run an instant query via `GET /api/v1/query`.
 
-        Retries up to 3 attempts (1s fixed wait) on HTTP 5xx/429 responses and
-        httpx timeout/transport errors; any other error, and the final failed
-        attempt, is raised.
+        Retries up to 3 attempts on HTTP 5xx/429 responses and httpx
+        timeout/transport errors, waiting 1s between attempts or, on a 429,
+        the server's `Retry-After` (capped at 60s); any other error, and the
+        final failed attempt, is raised.
 
         Args:
             parameter: Instant-query parameters — `query` (PromQL, required)
@@ -141,13 +143,13 @@ class PrometheusClientModel(BaseClientModel):
             url=self.query_v1_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return PrometheusQueryV1ResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -167,13 +169,13 @@ class PrometheusClientModel(BaseClientModel):
             url=self.query_v1_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return PrometheusQueryV1ResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -183,9 +185,10 @@ class PrometheusClientModel(BaseClientModel):
     ) -> PrometheusQueryRangeV1ResponseModel:
         """Run a range query via `GET /api/v1/query_range`.
 
-        Retries up to 3 attempts (1s fixed wait) on HTTP 5xx/429 responses and
-        httpx timeout/transport errors; any other error, and the final failed
-        attempt, is raised.
+        Retries up to 3 attempts on HTTP 5xx/429 responses and httpx
+        timeout/transport errors, waiting 1s between attempts or, on a 429,
+        the server's `Retry-After` (capped at 60s); any other error, and the
+        final failed attempt, is raised.
 
         Args:
             parameter: Range-query parameters — `query` (PromQL), `start`,
@@ -202,13 +205,13 @@ class PrometheusClientModel(BaseClientModel):
             url=self.query_range_v1_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return PrometheusQueryRangeV1ResponseModel.model_validate(response.json())
 
     @retry(
         retry=retry_if_exception(should_retry_idempotent),
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=wait_retry_after,
         reraise=True,
         before_sleep=log_retry_before_sleep,
     )
@@ -228,5 +231,5 @@ class PrometheusClientModel(BaseClientModel):
             url=self.query_range_v1_endpoint,
             params=parameter.model_dump(by_alias=True, exclude_none=True)
         )
-        response.raise_for_status()
+        raise_for_status(response=response)
         return PrometheusQueryRangeV1ResponseModel.model_validate(response.json())
