@@ -14,6 +14,7 @@ Flat DB/service modules:
 | `clickhouse.py` | `ClickHouseModel` | `clickhouse_connect` (sync + async) |
 | `trino.py`      | `TrinoModel`      | `trino` DB-API                      |
 | `slack.py`      | `SlackModel`      | `slack_sdk` Web API over `httpx`    |
+| `jira.py`       | `JiraClientModel` | `jira` SDK (`jira.JIRA`)            |
 
 Packages:
 
@@ -100,8 +101,8 @@ body. One concern per commit; stage paths deliberately, not `git add -A`.
 
 `base.py`'s `BaseClientModel` is the shared base for the httpx API clients
 (`GrafanaClientModel`, `PrometheusClientModel`, `BaseGoKrOpenDataClientModel`).
-The three DB/service models (`ClickHouseModel`, `TrinoModel`,
-`SlackModel`) do **not** inherit it — they re-implement the lifecycle
+The four DB/service models (`ClickHouseModel`, `TrinoModel`, `SlackModel`,
+`JiraClientModel`) do **not** inherit it — they re-implement the lifecycle
 independently. Treat it as the intended shared base and reconcile with it when
 refactoring those models. The credential-based clients (`ms/`, `google/`) sit
 outside it by design.

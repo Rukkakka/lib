@@ -17,6 +17,7 @@ body:
         - clients.clickhouse
         - clients.trino
         - clients.slack
+        - clients.jira
         - clients.grafana
         - clients.prometheus
         - clients.gokr_opendata

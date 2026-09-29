@@ -80,12 +80,16 @@ Context managers simply delegate:
   return dicts with the exact keys `slack_sdk` expects (`status`, `headers`,
   `body`), and raise failures as urllib's `HTTPError` / `URLError` so the
   retry handlers see what they were written for.
+- **jira.py** — a `@model_validator(mode='after')` requires either `token` or
+  both `id` and `password`; `client` builds `jira.JIRA` with token auth when a
+  token is set and basic auth otherwise. `proxy` is passed to the SDK's
+  `requests` session as both the `http` and `https` proxy.
 - **base.py** — `BaseClientModel(BaseModel, ABC)` is the shared contract for the
   httpx clients: common fields (`url_schema`, `verify`, `proxy`, `timeout`),
   abstract `_client` / `_async_client` properties, and the full
   close/aclose/context-manager surface. `GrafanaClientModel`,
   `PrometheusClientModel`, and `BaseGoKrOpenDataClientModel` inherit it; the
-  three DB/service models above do not.
+  four DB/service models above do not.
 - **utility/** — the pieces the httpx clients share. `models.py` holds the two
   pydantic bases every DTO descends from: `RequestModel` (`extra='forbid'`) and
   `ResponseModel` (`extra='allow'`, so a server adding a field does not break

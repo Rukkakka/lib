@@ -17,6 +17,7 @@ Database and service clients:
 | `clients.clickhouse`       | `ClickHouseModel` | `clickhouse_connect` (sync + async) |
 | `clients.trino`            | `TrinoModel`      | `trino` DB-API                      |
 | `clients.slack`            | `SlackModel`      | `slack_sdk` Web API over `httpx`    |
+| `clients.jira`             | `JiraClientModel` | `jira` SDK (`jira.JIRA`)            |
 
 HTTP API clients:
 
